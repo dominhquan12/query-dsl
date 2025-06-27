@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.BookDTO;
 import com.example.demo.entity.Book;
 import com.example.demo.mapper.BookMapper;
-import com.example.demo.service.BookService;
+import com.example.demo.service.BookCloneService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/books")
-public class BookController {
+@RequestMapping("/api/v2/books")
+public class BookCloneController {
 
     @Autowired
-    private BookService bookService;
+    private BookCloneService bookService;
 
     @Autowired
     private BookMapper bookMapper;
