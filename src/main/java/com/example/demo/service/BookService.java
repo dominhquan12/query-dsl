@@ -1,5 +1,7 @@
 package com.example.demo.service;
 
+import com.example.demo.aop.CustomNotFoundException;
+import com.example.demo.aop.ErrorCode;
 import com.example.demo.dto.BookDTO;
 import com.example.demo.entity.Author;
 import com.example.demo.entity.Book;
@@ -7,67 +9,49 @@ import com.example.demo.mapper.AuthorMapper;
 import com.example.demo.mapper.BookMapper;
 import com.example.demo.repository.AuthorRepository;
 import com.example.demo.repository.BookRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BookService {
 
-    @Autowired
-    private BookRepository bookRepository;
-
-    @Autowired
-    private AuthorRepository authorRepository;
-
-    @Autowired
-    private BookMapper bookMapper;
-    @Autowired
-    private AuthorMapper authorMapper;
+    BookRepository bookRepository;
+    AuthorRepository authorRepository;
+    BookMapper bookMapper;
+    AuthorMapper authorMapper;
 
     @Transactional
     public Book createBook(BookDTO bookDTO) {
         Book book = bookMapper.toEntity(bookDTO);
-        String authorName = book.getAuthor().getName();
 
-        // Tìm tác giả theo tên
-        Author author = authorRepository.findByName(authorName)
-                .orElseGet(() -> {
-                    Author newAuthor = authorMapper.toEntity(bookDTO.getAuthor());
-                    return authorRepository.save(newAuthor);
-                });
+        Author author = authorRepository.findByName(book.getAuthor().getName())
+                .orElseGet(() -> authorRepository.save(book.getAuthor()));
 
         book.setAuthor(author);
 
-        Optional<Book> existing = bookRepository.findByTitleAndAuthor(book.getTitle(), author);
-        if (existing.isPresent()) {
-            return existing.get(); // trả lại bản cũ, không tạo mới
-        }
-        return bookRepository.save(book);
+        return bookRepository.findByTitleAndAuthor(book.getTitle(), author)
+                .orElseGet(() -> bookRepository.save(book));
     }
 
     @Transactional
     public Book updateBook(Long id, BookDTO bookDTO) {
         Book existing = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+                .orElseThrow(() -> new CustomNotFoundException(ErrorCode.BOOK_NOT_FOUND));
 
         bookMapper.updateBookFromDto(bookDTO, existing);
 
-        // Nếu author != null, gán lại bản author từ DB theo name
-        if (bookDTO.getAuthor() != null && bookDTO.getAuthor().getName() != null) {
-            String authorName = bookDTO.getAuthor().getName();
+        Author author = authorRepository.findByName(bookDTO.getAuthor().getName())
+                .orElseGet(() -> authorRepository.save(authorMapper.toEntity(bookDTO.getAuthor())));
 
-            Author author = authorRepository.findByName(authorName)
-                    .orElseGet(() -> {
-                        Author newAuthor = authorMapper.toEntity(bookDTO.getAuthor());
-                        return authorRepository.save(newAuthor);
-                    });
-
-            existing.setAuthor(author);
-        }
+        existing.setAuthor(author);
 
         return bookRepository.save(existing);
     }

@@ -4,7 +4,9 @@ import com.example.demo.dto.BookDTO;
 import com.example.demo.entity.Book;
 import com.example.demo.mapper.BookMapper;
 import com.example.demo.service.BookService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,21 +14,18 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/books")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BookController {
 
-    @Autowired
     private BookService bookService;
 
-    @Autowired
     private BookMapper bookMapper;
 
     @GetMapping
     public ResponseEntity<List<BookDTO>> getAllBooks() {
         List<Book> books = bookService.getAllBooks();
-        List<BookDTO> dtos = books.stream()
-                .map(bookMapper::toDto)
-                .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(books.stream().map(bookMapper::toDto).toList());
     }
 
     @PostMapping

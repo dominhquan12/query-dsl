@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class BookServiceTest {
+public class BookServiceTest {
 
     @Mock
     private BookRepository bookRepository;
@@ -79,7 +79,6 @@ class BookServiceTest {
     void createBook_shouldCreateNewAuthorIfNotFound() {
         when(bookMapper.toEntity(bookDTO)).thenReturn(bookEntity);
         when(authorRepository.findByName("Nguyen Van A")).thenReturn(Optional.empty());
-        when(authorMapper.toEntity(bookDTO.getAuthor())).thenReturn(author);
         when(authorRepository.save(author)).thenReturn(author);
         when(bookRepository.findByTitleAndAuthor("Java 101", author)).thenReturn(Optional.empty());
         when(bookRepository.save(bookEntity)).thenReturn(bookEntity);
