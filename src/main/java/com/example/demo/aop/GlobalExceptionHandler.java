@@ -45,8 +45,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(CustomNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(CustomNotFoundException ex) {
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(CustomException ex) {
         log.warn("Validation error: {}", ex.getMessage());
 
         Map<String, Object> body = new HashMap<>();
@@ -54,9 +54,9 @@ public class GlobalExceptionHandler {
         body.put("error", ex.getHttpStatus().getReasonPhrase());
         body.put("code", ex.getErrorCode().getCode());
         body.put("message", ex.getErrorCode());
-        body.put("detail", ex.getErrorCode().getMessage());
+        body.put("detail", ex.getMessage());
         body.put("status", ex.getHttpStatus().value());
 
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(body, ex.getHttpStatus());
     }
 }

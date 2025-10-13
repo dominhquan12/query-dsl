@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
-    BOOK_NOT_FOUND("001", "book not found");
+    BOOK_NOT_FOUND("001", "book id = %s not found");
 
     private final String code;
     private final String message;
