@@ -9,10 +9,9 @@ import com.example.demo.entity.QBook;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
-import org.springframework.data.domain.*;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -31,12 +30,43 @@ public class BookRepositoryCustom {
         QBook book = QBook.book;
         QAuthor author = QAuthor.author;
 
-        // Extract filter values
+        // Predicate
+        BooleanBuilder where = buildWhereCondition(bookFilter, book, author);
+
+        // Sorting
+        OrderSpecifier<?> order = getOrderSpecifier(bookFilter, book, author);
+
+        JPAQuery<BookDTO> baseQuery = queryFactory
+                .select(Projections.constructor(BookDTO.class,
+                        book.id,
+                        book.title,
+                        Projections.constructor(AuthorDTO.class, author.id, author.name)))
+                .from(book)
+                .join(book.author(), author)
+                .where(where);
+
+        List<BookDTO> content = baseQuery.clone()
+                .orderBy(order)
+                .offset((long) bookFilter.getPageIndex() * bookFilter.getPageSize())
+                .limit(bookFilter.getPageSize())
+                .fetch();
+
+        Long total = baseQuery.clone()
+                .select(book.count())
+                .fetchOne();
+
+        long totalElements = Optional.ofNullable(total).orElse(0L);
+        int totalPages = (int) Math.ceil((double) totalElements / bookFilter.getPageSize());
+
+        return new PageResponse<>(content, totalElements, totalPages, bookFilter.getPageIndex(), bookFilter.getPageSize());
+    }
+
+    private BooleanBuilder buildWhereCondition(BookFilter bookFilter, QBook book, QAuthor author) {
+        BooleanBuilder where = new BooleanBuilder();
+
         String title = bookFilter.getTitle();
         String authorName = bookFilter.getAuthorName();
 
-        // Build dynamic conditions
-        BooleanBuilder where = new BooleanBuilder();
         if (title != null && !title.isBlank()) {
             where.and(book.title.containsIgnoreCase(title));
         }
@@ -44,40 +74,7 @@ public class BookRepositoryCustom {
             where.and(author.name.containsIgnoreCase(authorName));
         }
 
-        // Sorting
-        OrderSpecifier<?> order = getOrderSpecifier(bookFilter, book, author);
-
-        List<BookDTO> content = queryFactory
-                .select(Projections.constructor(BookDTO.class,
-                        book.id,
-                        book.title,
-                        Projections.constructor(AuthorDTO.class,
-                                author.id,
-                                author.name)))
-                .from(book)
-                .join(book.author(), author)
-                .where(where)
-                .orderBy(order)
-                .offset((long) bookFilter.getPageIndex() * bookFilter.getPageSize())
-                .limit(bookFilter.getPageSize())
-                .fetch();
-
-        Long total = queryFactory
-                .select(book.count())
-                .from(book)
-                .join(book.author(), author)
-                .where(where)
-                .fetchOne();
-
-        Pageable pageable = PageRequest.of(
-                bookFilter.getPageIndex(),
-                bookFilter.getPageSize(),
-                Sort.by(Direction.fromString(bookFilter.getSortDirection()), bookFilter.getSortBy())
-        );
-
-        Page<BookDTO> page = new PageImpl<>(content, pageable, Optional.ofNullable(total).orElse(0L));
-        return new PageResponse<>(page.getContent(), page.getTotalElements(), page.getTotalPages(), page.getNumber(), page.getSize());
-
+        return where;
     }
 
     private OrderSpecifier<?> getOrderSpecifier(BookFilter bookFilter, QBook book, QAuthor author) {
