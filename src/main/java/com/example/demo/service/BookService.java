@@ -4,6 +4,7 @@ import com.example.demo.aop.CustomException;
 import com.example.demo.aop.ErrorCode;
 import com.example.demo.dto.BookDTO;
 import com.example.demo.dto.BookFilter;
+import com.example.demo.dto.PageResponse;
 import com.example.demo.entity.Author;
 import com.example.demo.entity.Book;
 import com.example.demo.mapper.AuthorMapper;
@@ -14,7 +15,6 @@ import com.example.demo.repository.BookRepositoryCustom;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,11 +48,7 @@ public class BookService {
     @Transactional
     public Book updateBook(Long id, BookDTO bookDTO) {
         Book existing = bookRepository.findById(id)
-                .orElseThrow(() -> new CustomException(
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.BOOK_NOT_FOUND,
-                        id
-                ));
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND, id));
 
         bookMapper.updateBookFromDto(bookDTO, existing);
 
@@ -68,7 +64,7 @@ public class BookService {
         return bookRepository.findAll();
     }
 
-    public Page<BookDTO> searchBooks(BookFilter bookFilter) {
+    public PageResponse<BookDTO> searchBooks(BookFilter bookFilter) {
         return bookRepositoryCustom.searchBook(bookFilter);
     }
 }

@@ -2,13 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.BookDTO;
 import com.example.demo.dto.BookFilter;
+import com.example.demo.dto.PageResponse;
 import com.example.demo.entity.Book;
 import com.example.demo.mapper.BookMapper;
 import com.example.demo.service.BookService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +31,8 @@ public class BookController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<Page<BookDTO> > searchBooks(@RequestBody BookFilter bookFilter) {
-        Page<BookDTO> books = bookService.searchBooks(bookFilter);
+    public ResponseEntity<PageResponse<BookDTO>> searchBooks(@RequestBody BookFilter bookFilter) {
+        PageResponse<BookDTO> books = bookService.searchBooks(bookFilter);
         return ResponseEntity.ok(books);
     }
 

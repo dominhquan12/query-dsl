@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.dto.AuthorDTO;
 import com.example.demo.dto.BookDTO;
 import com.example.demo.dto.BookFilter;
+import com.example.demo.dto.PageResponse;
 import com.example.demo.entity.QAuthor;
 import com.example.demo.entity.QBook;
 import com.querydsl.core.BooleanBuilder;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class BookRepositoryCustom {
@@ -25,7 +27,7 @@ public class BookRepositoryCustom {
         this.queryFactory = new JPAQueryFactory(entityManager);
     }
 
-    public Page<BookDTO> searchBook(BookFilter bookFilter) {
+    public PageResponse<BookDTO> searchBook(BookFilter bookFilter) {
         QBook book = QBook.book;
         QAuthor author = QAuthor.author;
 
@@ -60,7 +62,7 @@ public class BookRepositoryCustom {
                 .limit(bookFilter.getPageSize())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(book.count())
                 .from(book)
                 .join(book.author(), author)
@@ -73,8 +75,9 @@ public class BookRepositoryCustom {
                 Sort.by(Direction.fromString(bookFilter.getSortDirection()), bookFilter.getSortBy())
         );
 
-        Page<BookDTO> page = new PageImpl<>(content, pageable, total);
-        return page;
+        Page<BookDTO> page = new PageImpl<>(content, pageable, Optional.ofNullable(total).orElse(0L));
+        return new PageResponse<>(page.getContent(), page.getTotalElements(), page.getTotalPages(), page.getNumber(), page.getSize());
+
     }
 
     private OrderSpecifier<?> getOrderSpecifier(BookFilter bookFilter, QBook book, QAuthor author) {
