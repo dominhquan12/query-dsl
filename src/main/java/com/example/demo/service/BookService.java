@@ -3,16 +3,18 @@ package com.example.demo.service;
 import com.example.demo.aop.CustomNotFoundException;
 import com.example.demo.aop.ErrorCode;
 import com.example.demo.dto.BookDTO;
+import com.example.demo.dto.BookFilter;
 import com.example.demo.entity.Author;
 import com.example.demo.entity.Book;
 import com.example.demo.mapper.AuthorMapper;
 import com.example.demo.mapper.BookMapper;
 import com.example.demo.repository.AuthorRepository;
 import com.example.demo.repository.BookRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.demo.repository.BookRepositoryCustom;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class BookService {
     AuthorRepository authorRepository;
     BookMapper bookMapper;
     AuthorMapper authorMapper;
+    BookRepositoryCustom bookRepositoryCustom;
 
     @Transactional
     public Book createBook(BookDTO bookDTO) {
@@ -58,6 +61,10 @@ public class BookService {
 
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
+    }
+
+    public Page<BookDTO> searchBooks(BookFilter bookFilter) {
+        return bookRepositoryCustom.searchBook(bookFilter);
     }
 }
 
