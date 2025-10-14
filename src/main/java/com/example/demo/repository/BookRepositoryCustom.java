@@ -1,9 +1,7 @@
 package com.example.demo.repository;
 
-import com.example.demo.dto.AuthorDTO;
-import com.example.demo.dto.BookDTO;
-import com.example.demo.dto.BookFilter;
-import com.example.demo.dto.PageResponse;
+import com.example.demo.dto.*;
+import com.example.demo.dto.BaseFilter.SortRequest;
 import com.example.demo.entity.QAuthor;
 import com.example.demo.entity.QBook;
 import com.querydsl.core.BooleanBuilder;
@@ -14,6 +12,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +33,7 @@ public class BookRepositoryCustom {
         BooleanBuilder where = buildWhereCondition(bookFilter, book, author);
 
         // Sorting
-        OrderSpecifier<?> order = getOrderSpecifier(bookFilter, book, author);
+        List<OrderSpecifier<?>> orders = getOrderSpecifiers(bookFilter, book, author);
 
         JPAQuery<BookDTO> baseQuery = queryFactory
                 .select(Projections.constructor(BookDTO.class,
@@ -46,7 +45,7 @@ public class BookRepositoryCustom {
                 .where(where);
 
         List<BookDTO> content = baseQuery.clone()
-                .orderBy(order)
+                .orderBy(orders.toArray(new OrderSpecifier[0]))
                 .offset((long) bookFilter.getPageIndex() * bookFilter.getPageSize())
                 .limit(bookFilter.getPageSize())
                 .fetch();
@@ -77,15 +76,23 @@ public class BookRepositoryCustom {
         return where;
     }
 
-    private OrderSpecifier<?> getOrderSpecifier(BookFilter bookFilter, QBook book, QAuthor author) {
-        String sortBy = bookFilter.getSortBy() != null ? bookFilter.getSortBy() : "id";
-        boolean isDesc = "DESC".equalsIgnoreCase(bookFilter.getSortDirection());
+    private List<OrderSpecifier<?>> getOrderSpecifiers(BookFilter filter, QBook book, QAuthor author) {
+        List<OrderSpecifier<?>> orders = new ArrayList<>();
 
-        return switch (sortBy) {
-            case "title" -> isDesc ? book.title.desc() : book.title.asc();
-            case "authorName" -> isDesc ? author.name.desc() : author.name.asc();
-            case "id" -> isDesc ? book.id.desc() : book.id.asc();
-            default -> book.id.asc();
-        };
+        if (filter.getSort() != null) {
+            for (SortRequest sort : filter.getSort()) {
+                boolean isDesc = "DESC".equalsIgnoreCase(sort.getDirection());
+                switch (sort.getField()) {
+                    case "title" -> orders.add(isDesc ? book.title.desc() : book.title.asc());
+                    case "authorName" -> orders.add(isDesc ? author.name.desc() : author.name.asc());
+                    default -> orders.add(book.id.asc());
+                }
+            }
+        }
+
+        if (orders.isEmpty()) orders.add(book.id.asc());
+
+        return orders;
     }
+
 }
