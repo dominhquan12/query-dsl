@@ -37,7 +37,7 @@ public class BookService {
         Book book = bookMapper.toEntity(bookDTO);
 
         Author author = authorRepository.findByName(book.getAuthor().getName())
-                .orElseGet(() -> authorRepository.save(book.getAuthor()));
+                .orElseGet(() -> authorRepository.saveAndFlush(book.getAuthor()));
 
         book.setAuthor(author);
 

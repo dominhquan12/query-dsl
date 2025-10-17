@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/demo
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # Hibernate chỉ validate, Flyway lo tạo table
+    show-sql: true
+  aop:
+    proxy-target-class: true
+    expose-proxy: true
